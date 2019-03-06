@@ -21,12 +21,49 @@ public class QueueSimulator{
   }
   
   public QueueSimulator(double aR, double servT, double simT){
+	  arrivalRate = aR;
+	  serviceTime = servT;
+	  totalSimTime = simT;
+	  timeForNextArrival = getRandTime(arrivalRate);
+	  timeForNextDeparture = timeForNextArrival + serviceTime;
+	  currTime = 0;
+
   }
   
   public double calcAverageWaitingTime(){
+	    double sum = 0;
+	    double arrival = 0;
+	    double depart = 0;
+	    int numPacket = 0;
+
+	    while(!eventQueue.isEmpty()){
+	      arrival = eventQueue.dequeue().getArrivalTime();
+	      depart = eventQueue.dequeue().getDepartureTime();
+	      sum += depart - arrival;
+	      numPacket++;
+	    }
+
+	    return sum/numPacket;
   }
   
   public double runSimulation(){
+	  while(currTime >= totalSimTime) {
+		  if(timeForNextArrival < timeForNextDeparture) { //ARRIVAL EVENT
+			  Data d = new Data();
+			  d.setArrivalTime(timeForNextArrival);
+			  currTime += timeForNextArrival;
+			  buffer.enqueue(d);
+			  timeForNextArrival = getRandTime(arrivalRate);
+		  }
+		  else { //DEPARTURE EVENT
+			  timeForNextDeparture = timeForNextArrival + serviceTime;
+			  Data e = buffer.dequeue();
+			  e.setDepartureTime(timeForNextDeparture);
+			  eventQueue.enqueue(e);
+			  
+		  }
+	  }
+	  
   }
 }
 
