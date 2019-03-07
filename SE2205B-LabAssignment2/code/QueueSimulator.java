@@ -24,46 +24,69 @@ public class QueueSimulator{
 	  arrivalRate = aR;
 	  serviceTime = servT;
 	  totalSimTime = simT;
-	  timeForNextArrival = getRandTime(arrivalRate);
-	  timeForNextDeparture = timeForNextArrival + serviceTime;
-	  currTime = 0;
-
   }
   
   public double calcAverageWaitingTime(){
 	    double sum = 0;
-	    double arrival = 0;
-	    double depart = 0;
-	    int numPacket = 0;
+	    int numPacket = eventQueue.size();
+	    Data current;
 
+	    // while loop dequeues each node and calculates the sum of each wait time
 	    while(!eventQueue.isEmpty()){
-	      arrival = eventQueue.dequeue().getArrivalTime();
-	      depart = eventQueue.dequeue().getDepartureTime();
-	      sum += depart - arrival;
-	      numPacket++;
+	    	current = eventQueue.dequeue();
+	    	sum += current.getDepartureTime() - current.getArrivalTime();
 	    }
-
+	    // returns average wait time
 	    return sum/numPacket;
   }
   
   public double runSimulation(){
-	  while(currTime >= totalSimTime) {
-		  if(timeForNextArrival < timeForNextDeparture) { //ARRIVAL EVENT
-			  Data d = new Data();
-			  d.setArrivalTime(timeForNextArrival);
-			  currTime += timeForNextArrival;
-			  buffer.enqueue(d);
-			  timeForNextArrival = getRandTime(arrivalRate);
-		  }
-		  else { //DEPARTURE EVENT
+	  currTime = 0;
+	  timeForNextArrival = getRandTime(arrivalRate);
+	  /*
+	   * while loop will stop running when currTime is more than totalSimTime
+	   * Each loop will simulate a packet in the router
+	   * A packet will either arrive in the buffer queue, or depart from the
+	   * buffer queue. If-else case will determine if it is arrive or depart.
+	   * Switch case will occur after every loop, adding a enqueueing or 
+	   * dequeueing the buffer queue.
+	   */
+	  while(currTime < totalSimTime) {
+		  
+		  //ARRIVAL EVENT
+		  if(buffer.isEmpty()) {
+			  e = Event.ARRIVAL;
 			  timeForNextDeparture = timeForNextArrival + serviceTime;
-			  Data e = buffer.dequeue();
-			  e.setDepartureTime(timeForNextDeparture);
-			  eventQueue.enqueue(e);
 			  
 		  }
+		  //ARRIVAL EVENT
+		  else if(timeForNextArrival < timeForNextDeparture) {
+			  e = Event.ARRIVAL;
+		  }
+		  //DEPARTURE EVENT
+		  else { 
+			  e = Event.DEPARTURE;
+		  }
+		  
+		  switch(e) {
+		  	case ARRIVAL:
+		  		currTime = timeForNextArrival;
+		  		Data a = new Data();
+		  		a.setArrivalTime(currTime);
+		  		buffer.enqueue(a);
+		  		timeForNextArrival += getRandTime(arrivalRate);
+		  		break;
+		  	case DEPARTURE:
+		  		currTime = timeForNextDeparture;
+		  		Data d;
+		  		d = buffer.dequeue();
+		  		d.setDepartureTime(currTime);
+		  		eventQueue.enqueue(d);
+		  		timeForNextDeparture += serviceTime;
+		  		break;
+		  }
 	  }
-	  
+	  return calcAverageWaitingTime();
   }
 }
 
